@@ -1,11 +1,12 @@
 import discord
 from discord.ext import commands
-'''import openai'''
+import google.generativeai as genai
 
-# import bot token
+# Import bot token
 from apikeys import *
 
-'''openai.api_key = gptToken'''
+# Set up Google GenAI API key
+genai.configure(api_key=geminiToken)
 
 # Define the intents
 intents = discord.Intents.default()  # Enables default intents 
@@ -23,30 +24,33 @@ async def on_ready():
 async def hello(ctx):
     await ctx.send("Hello, I'm Andronel!")
 
-'''
+# Gemini Integration
 @client.command()
 async def ask(ctx, *, question):
-    """Handle user queries and pass them to OpenAI's API."""
+    """Handle user queries and pass them to Gemini's API."""
     try:
-        # Call OpenAI API with the user's question
-        response = openai.chat.completions.create(
-            model="gpt-3.5-turbo",  
-            messages=[{"role": "user", "content": question}],
-            max_tokens=150,  # Limit the response length
-            temperature=0.7,  # Adjust creativity of the response
-        )
-        
-        # Extract the generated text from OpenAI's response
-        answer = response.choices[0].message.content.strip()
-        
-        # Send the response back to Discord
-        await ctx.send(answer)
+        # Create an instance of the Gemini model
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Generate a response using the Gemini model
+        response = model.generate_content(question)
+        # Extract the text of the response
+        answer = response.text
+
+        # Check if the response exceeds Discord's message limit (2000 characters)
+        if len(answer) > 2000:
+            # Split the response into chunks of 2000 characters
+            chunks = [answer[i:i+2000] for i in range(0, len(answer), 2000)]
+            for chunk in chunks:
+                await ctx.send(chunk)  # Send each chunk as a separate message
+        else:
+            await ctx.send(answer)  # Send the response if it's under 2000 characters
     
     except Exception as e:
         # Handle any errors
         await ctx.send("Sorry, I couldn't process your request. Please try again later!")
         print(f"Error: {e}")
-    '''
+
+# Voice join 
 @client.command(pass_context = True)
 async def androjoin(ctx):
     if (ctx.author.voice):
@@ -55,6 +59,7 @@ async def androjoin(ctx):
     else:
         await ctx.send("You're not in a voice channel. You must be in a voice channel to run this command")
 
+# Voice leave
 @client.command(pass_context = True)
 async def androleave(ctx):
     if (ctx.voice_client):
@@ -63,8 +68,7 @@ async def androleave(ctx):
     else:
         await ctx.send("I am not in a voice channel")
 
-
-    
-
+  
+# Run the Bot
 client.run(botToken)
 
