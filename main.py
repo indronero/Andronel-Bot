@@ -44,6 +44,9 @@ async def hello(interaction: discord.Interaction):
 async def ask(interaction: discord.Interaction, question: str):
     """Handle user queries and pass them to Gemini's API."""
     try:
+        # Defer the interaction response as response may take longer than 3 seconds
+        await interaction.response.defer()  # Sends an "acknowledgment" that the bot is processing
+
         model = genai.GenerativeModel("gemini-1.5-flash")   # Create an instance of the Gemini model
         response = model.generate_content(question) # Generate a response using the Gemini model
         answer = response.text  # Extract the text of the response
@@ -53,13 +56,13 @@ async def ask(interaction: discord.Interaction, question: str):
             # Split the response into chunks of 2000 characters
             chunks = [answer[i:i+2000] for i in range(0, len(answer), 2000)]
             for chunk in chunks:
-                await interaction.response.send_message(chunk)  # Send each chunk as a separate message
+                await interaction.followup.send(chunk)  # Send each chunk as a separate message
         else:
-            await interaction.response.send_message(answer)  # Send the response if it's under 2000 characters
+            await interaction.followup.send(answer)  # Send the response if it's under 2000 characters
     
     except Exception as e:
         # Handle any errors
-        await interaction.response.send_message("Sorry, I couldn't process your request. Please try again later!")
+        await interaction.followup.send("Sorry, I couldn't process your request. Please try again later!")
         print(f"Error: {e}")
 
 
@@ -93,9 +96,10 @@ async def play(interaction: discord.Interaction, title: str):
 
         # Check if the user is in a voice channel
         if not interaction.user.voice:
-            await interaction.response.send_message("You're not in a voice channel. You must be in a voice channel to run this command.")
+            await interaction.followup.send("You're not in a voice channel! You must be in a voice channel to run this command.")
             return
 
+        # Connect to the user's voice channel
         channel = interaction.user.voice.channel
         if interaction.guild.voice_client is None:
             await channel.connect()
@@ -124,10 +128,11 @@ async def play(interaction: discord.Interaction, title: str):
             'options': '-vn',
         }
 
-        source = PCMVolumeTransformer(FFmpegPCMAudio(video_url, **ffmpeg_opts))
-
+        # Check if there is a song playing and pause it
         if voice.is_playing():
             voice.pause()
+
+        source = PCMVolumeTransformer(FFmpegPCMAudio(video_url, **ffmpeg_opts))
 
         voice.play(source, after=lambda e: print(f"Finished playing: {video_title}"))
         await interaction.followup.send(f"Now playing: **{video_title}**")
