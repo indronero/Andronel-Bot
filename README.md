@@ -79,6 +79,6 @@ Andronel is an advanced AI-driven Discord bot that integrates Google Generative 
 - Verify you have the latest versions of dependencies
 - Check Discord bot permissions and intents
 
-### License
+## License
 
 This project is licensed under the MIT License. Contributions are welcome!
