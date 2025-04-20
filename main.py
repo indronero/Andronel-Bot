@@ -7,11 +7,23 @@ from yt_dlp import YoutubeDL
 import os
 from discord import PCMVolumeTransformer
 
+from openai import OpenAI
+
+
 # Import bot token
 from apikeys import *
 
 # Set up Google GenAI API key
 genai.configure(api_key=geminiToken)
+
+"""
+# Set up DeepSeek API client via OpenAI SDK
+deepseek_client = OpenAI(
+    api_key= deepseekToken,
+    base_url="https://api.deepseek.com/v1"
+)
+
+"""
 
 class Client(commands.Bot):
     async def on_ready(self):
@@ -65,6 +77,48 @@ async def ask(interaction: discord.Interaction, question: str):
         await interaction.followup.send("Sorry, I couldn't process your request. Please try again later!")
         print(f"Error: {e}")
 
+# API might have costs
+"""
+@client.tree.command(name="deepseek", description="Ask DeepSeek AI a question", guild=GUILD_ID)
+async def deepseek(
+    interaction: discord.Interaction,
+    prompt: str
+):
+    # Acknowledge the command (may take >3s)
+    await interaction.response.defer()
+
+    try:
+        # Build the conversation messages
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user",   "content": prompt}
+        ]
+
+        # Invoke DeepSeek via OpenAI SDK (non‑streaming)
+        resp = deepseek_client.chat.completions.create(
+            model="deepseek-chat",    # Or "deepseek-reasoner"
+            messages=messages,
+            stream=False
+        )
+
+        # Extract the assistant’s reply
+        answer = resp.choices[0].message.content  # first choice :contentReference[oaicite:4]{index=4}
+
+        # Chunk if over Discord’s limit
+        if len(answer) > 2000:
+            for i in range(0, len(answer), 2000):
+                await interaction.followup.send(answer[i:i+2000])
+        else:
+            await interaction.followup.send(answer)
+
+    except Exception as e:
+        await interaction.followup.send(
+            "Oops! Something went wrong with DeepSeek."
+        )
+        print(f"[DeepSeek] Error: {e}")
+
+
+"""
 
 # Voice Join
 @client.tree.command(name="androjoin", description="Join a voice channel", guild=GUILD_ID)
